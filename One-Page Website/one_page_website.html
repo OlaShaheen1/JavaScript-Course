@@ -8,7 +8,7 @@
         :root { 
             --primary-color: #6a4c93; 
             --bg-color: #f3eff5; 
-            --overlay-bg: rgba(0, 0, 0, 0.8);
+            --overlay-bg: rgba(0, 0, 0, 0.9);
         }
         
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; color: #333; line-height: 1.6; }
@@ -22,7 +22,7 @@
         #pictures, #contact { background-color: var(--bg-color); }
         
         /* Gallery Styles */
-        img { 
+        #pictures img { 
             max-width: 100%; 
             height: auto; 
             border-radius: 8px; 
@@ -30,11 +30,11 @@
             cursor: pointer; 
             transition: transform 0.3s ease;
         }
-        img:hover { transform: scale(1.02); }
+        #pictures img:hover { transform: scale(1.02); }
 
         /* Lightbox Styles */
         #lightbox {
-            display: none; /* Hidden by default */
+            display: none;
             position: fixed;
             z-index: 1000;
             top: 0;
@@ -44,19 +44,41 @@
             background-color: var(--overlay-bg);
             justify-content: center;
             align-items: center;
-            cursor: zoom-out;
         }
 
         #lightbox img {
-            max-width: 90%;
-            max-height: 80%;
+            max-width: 85%;
+            max-height: 75%;
             border: 5px solid white;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            transform: scale(1); /* Reset hover scale for lightbox */
-            cursor: default;
         }
 
-        #lightbox:target { display: flex; } /* Logic if using anchors, but we'll use JS for smoother UI */
+        /* NEW: Slideshow Nav Buttons */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 20px;
+            user-select: none;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .nav-btn:hover { color: var(--primary-color); }
+        .prev { left: 20px; }
+        .next { right: 20px; }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
 
         form { display: flex; flex-direction: column; gap: 10px; }
         input, textarea, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
@@ -77,7 +99,10 @@
 
     <!-- Lightbox Container -->
     <div id="lightbox">
+        <span class="close-btn">&times;</span>
+        <span class="nav-btn prev">&#10094;</span>
         <img id="lightbox-img" src="" alt="Enlarged view">
+        <span class="nav-btn next">&#10095;</span>
     </div>
 
     <section id="home">
@@ -87,9 +112,9 @@
 
     <section id="pictures">
         <h2>Picture Gallery</h2>
-        <!-- You can add more images here and the JS will automatically handle them -->
         <img src="https://picsum.photos/id/1043/800/400" alt="A beautiful landscape view">
         <img src="https://picsum.photos/id/1015/800/400" alt="River in the mountains">
+        <img src="https://picsum.photos/id/1039/800/400" alt="A waterfall">
     </section>
 
     <section id="video">
@@ -118,22 +143,51 @@
         const lightbox = document.getElementById('lightbox');
         const lightboxImg = document.getElementById('lightbox-img');
         const galleryImages = document.querySelectorAll('#pictures img');
+        const prevBtn = document.querySelector('.prev');
+        const nextBtn = document.querySelector('.next');
+        
+        let currentIndex = 0;
 
-        // Open Lightbox
-        galleryImages.forEach(image => {
+        // Open Lightbox and track which image was clicked
+        galleryImages.forEach((image, index) => {
             image.addEventListener('click', () => {
+                currentIndex = index;
+                updateLightbox();
                 lightbox.style.display = 'flex';
-                lightboxImg.src = image.src;
-                // Prevent body scrolling when lightbox is open
                 document.body.style.overflow = 'hidden';
             });
         });
 
-        // Close Lightbox by clicking anywhere on the background
+        // Function to update the image in the lightbox
+        function updateLightbox() {
+            lightboxImg.src = galleryImages[currentIndex].src;
+        }
+
+        // Navigate to next/prev
+        function navigate(step) {
+            currentIndex += step;
+            if (currentIndex >= galleryImages.length) currentIndex = 0;
+            if (currentIndex < 0) currentIndex = galleryImages.length - 1;
+            updateLightbox();
+        }
+
+        nextBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(1); });
+        prevBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(-1); });
+
+        // Close Lightbox
         lightbox.addEventListener('click', (e) => {
-            if (e.target !== lightboxImg) {
+            if (e.target !== lightboxImg && e.target !== prevBtn && e.target !== nextBtn) {
                 lightbox.style.display = 'none';
                 document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (lightbox.style.display === 'flex') {
+                if (e.key === "ArrowRight") navigate(1);
+                if (e.key === "ArrowLeft") navigate(-1);
+                if (e.key === "Escape") lightbox.click();
             }
         });
     </script>
